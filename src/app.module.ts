@@ -5,7 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { PodcastsModule } from './podcasts/podcasts.module';
+import { UsersModule } from './users/users.module';
+import { CommonModule } from './common/common.module';
 import { Podcast } from './podcasts/entities/podcast.entity';
+import { User } from './users/entities/user.entity';
 
 @Module({
   imports: [
@@ -31,13 +34,15 @@ import { Podcast } from './podcasts/entities/podcast.entity';
       database: process.env.DB_DATABASE,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: true,
-      entities: [Podcast],
+      entities: [Podcast, User],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
     }),
     PodcastsModule,
+    UsersModule,
+    CommonModule,
   ],
   controllers: [],
   providers: [],
