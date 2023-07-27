@@ -9,7 +9,6 @@ export class AuthGuard implements CanActivate {
     const user = gqlContext.user;
     if (!user) return false;
 
-    console.log('❤🧡', user);
     return true;
   }
 }

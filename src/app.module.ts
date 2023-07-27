@@ -14,8 +14,10 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { Podcast } from './podcasts/entities/podcast.entity';
 import { User } from './users/entities/user.entity';
+import { Verification } from './users/entities/verification.entity';
 import { JwtModule } from './jwt/jwt.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -31,6 +33,9 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
         PRIVATE_KEY: Joi.string().required(),
+        MAILGUN_API_KEY: Joi.string().required(),
+        MAILGUN_DOMAIN: Joi.string().required(),
+        MAILGUN_FROM_EMAIL: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -42,7 +47,7 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
       database: process.env.DB_DATABASE,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: true,
-      entities: [Podcast, User],
+      entities: [Podcast, User, Verification],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -55,6 +60,11 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
     PodcastsModule,
     UsersModule,
     AuthModule,
+    MailModule.forRoot({
+      apiKey: process.env.MAILGUN_API_KEY,
+      domain: process.env.MAILGUN_DOMAIN,
+      fromEmail: process.env.MAILGUN_FROM_EMAIL,
+    }),
   ],
   controllers: [],
   providers: [],
