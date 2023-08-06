@@ -1,3 +1,4 @@
+import * as bcrypt from 'bcrypt';
 import { Entity, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
 import {
   InputType,
@@ -5,43 +6,52 @@ import {
   Field,
   registerEnumType,
 } from '@nestjs/graphql';
-import { CoreEntity } from 'src/common/entities/core.entity';
-import * as bcrypt from 'bcrypt';
+import { IsEmail, IsString, IsBoolean, IsEnum, Length } from 'class-validator';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsEmail, IsString, IsEnum } from 'class-validator';
+import { CoreEntity } from 'src/common/entities/core.entity';
 
-// Enum for DB, TS
-enum UserRole {
-  Host,
-  Listener,
-  Admin,
+export enum UserRole {
+  Host = 'Host',
+  Guest = 'Guest',
 }
 
-// Enum for GraphQL
 registerEnumType(UserRole, { name: 'UserRole' });
 
 @Entity()
 @InputType({ isAbstract: true })
 @ObjectType()
 export class User extends CoreEntity {
-  @Column()
-  @Field(() => String)
+  @Column({ unique: true })
+  @Field((type) => String)
   @IsEmail()
   email: string;
 
   @Column({ select: false })
-  @Field(() => String)
+  @Field((type) => String)
   @IsString()
+  @Length(4, 16)
   password: string;
 
+  @Column()
+  @Field((type) => String)
+  @IsString()
+  @Length(1, 10)
+  nickname: string;
+
   @Column({ type: 'enum', enum: UserRole })
-  @Field(() => UserRole)
+  @Field((type) => UserRole)
   @IsEnum(UserRole)
   role: UserRole;
 
   @Column({ default: false })
-  @Field(() => Boolean)
+  @Field((type) => Boolean)
+  @IsBoolean()
   verified: boolean;
+
+  @Column({ nullable: true })
+  @Field((type) => String, { nullable: true })
+  @IsString()
+  photo?: string;
 
   @BeforeInsert()
   @BeforeUpdate()
@@ -50,7 +60,7 @@ export class User extends CoreEntity {
       try {
         this.password = await bcrypt.hash(this.password, 10);
       } catch (error) {
-        console.log(error);
+        console.log(`⛔ [에러] [hashPassword] ${error}`);
         throw new InternalServerErrorException();
       }
     }
@@ -61,7 +71,7 @@ export class User extends CoreEntity {
       const ok = await bcrypt.compare(passwordInput, this.password);
       return ok;
     } catch (error) {
-      console.log(error);
+      console.log(`⛔ [에러] [checkPassword] ${error}`);
       throw new InternalServerErrorException();
     }
   }

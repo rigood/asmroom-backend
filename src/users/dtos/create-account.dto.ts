@@ -6,6 +6,7 @@ import { CoreOutput } from 'src/common/dtos/output.dto';
 export class CreateAccountInput extends PickType(User, [
   'email',
   'password',
+  'nickname',
   'role',
 ]) {}
 

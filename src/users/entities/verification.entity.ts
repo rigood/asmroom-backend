@@ -9,12 +9,15 @@ import { User } from './user.entity';
 @ObjectType()
 export class Verification extends CoreEntity {
   @Column()
-  @Field(() => String)
+  @Field((type) => String)
   code: string;
 
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
+
+  @Column()
+  userId: number;
 
   @BeforeInsert()
   createCode(): void {

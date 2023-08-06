@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 import * as FormData from 'form-data';
 import { Injectable, Inject } from '@nestjs/common';
-import { MailModuleOptions, EmailVar } from './mail.interfaces';
 import { CONFIG_OPTIONS } from 'src/common/common.constants';
+import { MailModuleOptions } from './mail.interfaces';
 
 @Injectable()
 export class MailService {
@@ -10,20 +10,20 @@ export class MailService {
     @Inject(CONFIG_OPTIONS) private readonly options: MailModuleOptions,
   ) {}
 
-  private async sendEmail(
+  async sendEmail(
     subject: string,
     toEmail: string,
     template: string,
-    emailVars: EmailVar[],
-  ) {
+    emailVars: { [key: string]: string },
+  ): Promise<void> {
     const form = new FormData();
+    form.append('subject', subject);
     form.append('from', `ASMRoom <mailgun@asmroom.com>`);
     form.append('to', toEmail);
     form.append('template', template);
-    form.append('subject', subject);
-    emailVars.forEach((emailVar) =>
-      form.append(`v:${emailVar.key}`, emailVar.value),
-    );
+    Object.keys(emailVars).forEach((key) => {
+      form.append(`v:${key}`, emailVars[key]);
+    });
 
     try {
       await fetch(
@@ -39,19 +39,14 @@ export class MailService {
         },
       );
     } catch (error) {
-      console.log(error);
+      console.log(`⛔ [에러] [sendEmail] ${error}`);
     }
   }
 
-  sendVerificationEmail(email: string, code: string) {
-    this.sendEmail(
-      'ASMRoom 회원가입 이메일 인증',
-      'rigood@naver.com',
-      'asmroom',
-      [
-        { key: 'username', value: email.split('@')[0] },
-        { key: 'code', value: code },
-      ],
-    );
+  sendVerificationEmail(email: string, nickname: string, code: string) {
+    this.sendEmail('ASMRoom 이메일 인증', 'rigood@naver.com', 'asmroom', {
+      nickname,
+      code,
+    });
   }
 }
