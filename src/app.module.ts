@@ -18,6 +18,7 @@ import { Verification } from './users/entities/verification.entity';
 import { JwtModule } from './jwt/jwt.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { MailModule } from './mail/mail.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -35,6 +36,8 @@ import { MailModule } from './mail/mail.module';
         PRIVATE_KEY: Joi.string().required(),
         MAILGUN_API_KEY: Joi.string().required(),
         MAILGUN_DOMAIN: Joi.string().required(),
+        AWS_KEY: Joi.string().required(),
+        AWS_SECRET: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -63,6 +66,7 @@ import { MailModule } from './mail/mail.module';
     }),
     UsersModule,
     AuthModule,
+    UploadModule,
     PodcastsModule,
   ],
   controllers: [],
