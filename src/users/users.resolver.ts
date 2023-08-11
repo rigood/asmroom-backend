@@ -1,4 +1,5 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
+import { Inject } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import {
@@ -16,10 +17,15 @@ import {
 } from './dtos/change-password.dto';
 import { ChangeEmailInput, ChangeEmailOutput } from './dtos/change-email.dto';
 import { Role } from 'src/auth/role.decorator';
+import { PUB_SUB } from 'src/common/common.constants';
+import { PubSub } from 'graphql-subscriptions';
 
 @Resolver((of) => User)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    @Inject(PUB_SUB) private readonly pubSub: PubSub,
+  ) {}
 
   @Mutation((returns) => CreateAccountOutput)
   createAccount(
@@ -79,5 +85,29 @@ export class UsersResolver {
   @Role(['Any'])
   me(@AuthUser() authUser: User) {
     return authUser;
+  }
+
+  @Subscription((returns) => String, {
+    filter(payload, variables, context) {
+      console.log(
+        `💰 payload ${payload.sub} variables ${
+          variables.userId
+        } cotnext ${JSON.stringify(context.user, null, 2)}`,
+      );
+      return payload.sub === variables.userId;
+    },
+    resolve: ({ sub }) => `userId is ${sub}`,
+  })
+  @Role(['Any'])
+  sub(@Args('userId') userId: number) {
+    return this.pubSub.asyncIterator('trigger');
+  }
+
+  @Mutation((returns) => Boolean)
+  async event(@Args('userId') userId: number) {
+    await this.pubSub.publish('trigger', {
+      sub: userId,
+    });
+    return true;
   }
 }

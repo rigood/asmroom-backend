@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from 'src/jwt/jwt.service';
@@ -18,6 +18,8 @@ import {
   ChangePasswordOutput,
 } from './dtos/change-password.dto';
 import { ChangeEmailInput, ChangeEmailOutput } from './dtos/change-email.dto';
+import { PUB_SUB } from 'src/common/common.constants';
+import { PubSub } from 'graphql-subscriptions';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +29,7 @@ export class UsersService {
     private readonly verifications: Repository<Verification>,
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
+    @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
   async createAccount({

@@ -19,6 +19,9 @@ import { JwtModule } from './jwt/jwt.module';
 import { JwtMiddleware } from './jwt/jwt.middleware';
 import { MailModule } from './mail/mail.module';
 import { UploadModule } from './upload/upload.module';
+import { CommonModule } from './common/common.module';
+import { Context } from 'graphql-ws';
+import { TOKEN_KEY } from './common/common.constants';
 
 @Module({
   imports: [
@@ -55,7 +58,17 @@ import { UploadModule } from './upload/upload.module';
       driver: ApolloDriver,
       autoSchemaFile: true,
       playground: process.env.NODE_ENV !== 'production',
-      context: ({ req }) => ({ user: req['user'] }),
+      subscriptions: {
+        'graphql-ws': {
+          onConnect: (context: Context) => {
+            const { connectionParams, extra } = context;
+            extra['token'] = connectionParams[TOKEN_KEY];
+          },
+        },
+      },
+      context: ({ req, extra }) => {
+        return { token: req ? req.headers[TOKEN_KEY] : extra.token };
+      },
     }),
     MailModule.forRoot({
       apiKey: process.env.MAILGUN_API_KEY,
@@ -68,14 +81,9 @@ import { UploadModule } from './upload/upload.module';
     AuthModule,
     UploadModule,
     PodcastsModule,
+    CommonModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(JwtMiddleware)
-      .forRoutes({ path: '/graphql', method: RequestMethod.POST });
-  }
-}
+export class AppModule {}
