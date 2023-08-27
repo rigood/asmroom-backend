@@ -1,5 +1,12 @@
 import * as bcrypt from 'bcrypt';
-import { Entity, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
+import {
+  Entity,
+  Column,
+  BeforeInsert,
+  BeforeUpdate,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 import {
   InputType,
   ObjectType,
@@ -9,10 +16,12 @@ import {
 import { IsEmail, IsString, IsBoolean, IsEnum, Length } from 'class-validator';
 import { InternalServerErrorException } from '@nestjs/common';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { Channel } from 'src/channel/entities/channel.entity';
+import { Review } from 'src/channel/entities/review.entity';
 
 export enum UserRole {
-  Host = 'Host',
-  Guest = 'Guest',
+  Artist = 'Artist',
+  Listener = 'Listener',
 }
 
 registerEnumType(UserRole, { name: 'UserRole' });
@@ -35,7 +44,7 @@ export class User extends CoreEntity {
   @Column()
   @Field((type) => String)
   @IsString()
-  @Length(1, 10)
+  @Length(2, 20)
   nickname: string;
 
   @Column({ type: 'enum', enum: UserRole })
@@ -52,6 +61,18 @@ export class User extends CoreEntity {
   @Field((type) => String, { nullable: true })
   @IsString()
   photo?: string;
+
+  @OneToOne(() => Channel, (channel) => channel.artist)
+  @Field((type) => Channel)
+  channel: Channel;
+
+  @Column({ nullable: true })
+  @Field((type) => Number, { nullable: true })
+  channelId?: number;
+
+  @OneToMany(() => Review, (review) => review.episode)
+  @Field((type) => [Review])
+  reviews: Review[];
 
   @BeforeInsert()
   @BeforeUpdate()

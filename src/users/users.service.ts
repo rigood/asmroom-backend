@@ -2,8 +2,9 @@ import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from 'src/jwt/jwt.service';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { Verification } from './entities/verification.entity';
+import { Channel } from 'src/channel/entities/channel.entity';
 import {
   CreateAccountInput,
   CreateAccountOutput,
@@ -27,6 +28,7 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Verification)
     private readonly verifications: Repository<Verification>,
+    @InjectRepository(Channel) private readonly channels: Repository<Channel>,
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
@@ -48,6 +50,17 @@ export class UsersService {
       const user = await this.users.save(
         this.users.create({ email, password, nickname, role }),
       );
+
+      if (role === UserRole.Artist) {
+        const channel = await this.channels.save(
+          this.channels.create({
+            name: nickname,
+            artist: user,
+          }),
+        );
+
+        await this.users.update(user.id, { channelId: channel.id });
+      }
 
       const verification = await this.verifications.save(
         this.verifications.create({ user }),
@@ -182,6 +195,19 @@ export class UsersService {
       const user = await this.users.findOne({
         where: { id: userId },
       });
+
+      const emailExist = await this.users.findOne({
+        where: {
+          email,
+        },
+      });
+
+      if (emailExist) {
+        return {
+          ok: false,
+          error: `[에러] 이미 사용중인 이메일입니다.`,
+        };
+      }
 
       if (!user.verified) {
         await this.verifications.delete({ userId });

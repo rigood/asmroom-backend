@@ -26,15 +26,13 @@ export class UploadController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 100000 }),
+          new MaxFileSizeValidator({ maxSize: 1000000 }),
           new FileTypeValidator({ fileType: '.(png|jpeg|jpg)' }),
         ],
       }),
     )
     file: Express.Multer.File,
   ) {
-    console.log(file);
-
     AWS.config.update({
       credentials: {
         accessKeyId: this.configService.get('AWS_KEY'),
